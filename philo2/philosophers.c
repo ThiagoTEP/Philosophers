@@ -1,0 +1,76 @@
+#include "philosophers.h"
+
+static int set_args(t_data *vars, char *av[], int ac)
+{
+    vars->n_philos = ft_atoi(av[1]);
+    vars->time_to_die = ft_atoi(av[2]);
+    vars->time_to_eat = ft_atoi(av[3]);
+    vars->time_to_sleep = ft_atoi(av[4]);
+    vars->n_eat = -1;
+    vars->stop = 0;
+    if (ac == 6)
+        vars->n_eat = ft_atoi(av[5]);
+    return (0);
+}
+
+static int args_check(char *av[], int ac)
+{
+    int i, j;
+    int val;
+
+    if (ac < 5 || ac > 6)
+        return (1);
+
+    i = 1;
+    while (i < ac)
+    {
+        if (ft_strlen(av[i]) == 0)
+            return (1);
+        j = 0;
+        while (av[i][j])
+        {
+            if (av[i][j] < '0' || av[i][j] > '9')
+                return (1);
+            j++;
+        }
+        val = ft_atoi(av[i]);
+        if ((i == 1 || i == 2 || i == 3 || i == 4) && val < 1)
+            return (1);
+        i++;
+    }
+    return (0);
+}
+
+int main(int ac, char *av[])
+{
+    t_data vars;
+    pthread_t monitor;
+
+    if (args_check(av, ac))
+    {
+        ft_putstr_error("Error\nInvalid arguments");
+        return (1);
+    }
+    set_args(&vars, av, ac);
+    vars.start_time = get_time();
+	if (init_forks(&vars) == 1)
+		return (1);
+	if (init_philos(&vars) == 1)
+	{
+        ft_closed(&vars);
+		return (1);
+	}
+	if (init_threads(&vars) == 1)
+	{
+        ft_closed(&vars);
+		return (1);
+	}
+    if (pthread_create(&monitor, NULL, &monitor_philos, &vars) != 0)
+    {
+        ft_closed(&vars);
+        return (1);
+    }
+    pthread_join(monitor, NULL);
+    ft_closed(&vars);
+    return (0);
+}
